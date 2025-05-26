@@ -376,6 +376,7 @@ class Repository(ApiObject):
     REPO_COMMITS = "/repos/%s/%s/commits"  # <owner>, <reponame>
     REPO_TRANSFER = "/repos/{owner}/{repo}/transfer"
     REPO_MILESTONES = """/repos/{owner}/{repo}/milestones"""
+    REPO_PULLS = """/repos/%s/%s/pulls""" # <owner>, <reponame>
 
     def __init__(self, gitea):
         super().__init__(gitea)
@@ -568,6 +569,35 @@ class Repository(ApiObject):
     def delete_hook(self, id: str):
         url = f"/repos/{self.owner.username}/{self.name}/hooks/{id}"
         self.gitea.requests_delete(url)
+    
+    def create_pull_request(self,
+                            base: str, 
+                            head: str,
+                            body: str,
+                            title: str,
+                            assignee: Optional[str] = None, 
+                            assignees: Optional[List[str]] = None,
+                            due_date: Optional[str] = None,
+                            labels: Optional[List[int]] = None,
+                            milestone: Optional[int] = None,
+                            ):
+        data = {
+            "base": base, 
+            "head": head,
+            "body": body,
+            "title": title,
+            "assignee": assignee, 
+            "assignees": assignees,
+            "due_date": due_date,
+            "labels": labels,
+            "milestone": milestone,
+        }
+        url = Repository.REPO_PULLS % (self.owner.username, self.name) # type: ignore
+        result = self.gitea.requests_post(
+            url,
+            data=data
+        )
+        return result #TODO: Add validation and Pull Request Object
 
     def is_collaborator(self, username) -> bool:
         if isinstance(username, User):

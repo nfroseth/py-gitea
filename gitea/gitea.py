@@ -19,6 +19,7 @@ class Gitea:
     GET_USER = """/user"""
     CREATE_ORG = """/admin/users/%s/orgs"""  # <username>
     CREATE_TEAM = """/orgs/%s/teams"""  # <orgname>
+    ADD_PUBLIC_KEY = """/admin/users/%s/keys"""
 
     def __init__(
         self,
@@ -401,3 +402,21 @@ class Gitea:
             api_object, "_organization", org
         )  # fixes strange behaviour of gitea not returning a valid organization here.
         return api_object
+
+    def add_public_key(self, owner: User, key:str, title: str, read_only = False):
+        assert isinstance(owner, User)
+        result = self.requests_post(
+            Gitea.ADD_PUBLIC_KEY % owner.username,
+            data = {
+                "key": key,
+                "read_only": read_only,
+                "title": title,
+            },
+        )
+        if "id" in result:
+            self.logger.info("Successfully created Public Key, Fingerprint: %s" % result["fingerprint"])
+        else:
+            self.logger.error("Public Key not created... (gitea: %s)" % result["message"])
+            self.logger.error(result["message"])
+            raise Exception("Public Key not created... (gitea: %s)" % result["message"])
+        return True #TODO: Return the py-Gitea Key object here 
