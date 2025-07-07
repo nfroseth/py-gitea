@@ -20,6 +20,7 @@ class Gitea:
     CREATE_ORG = """/admin/users/%s/orgs"""  # <username>
     CREATE_TEAM = """/orgs/%s/teams"""  # <orgname>
     ADD_PUBLIC_KEY = """/admin/users/%s/keys"""
+    CREATE_TOKEN = """/users/%s/tokens"""  # <username>
 
     def __init__(
         self,
@@ -420,3 +421,60 @@ class Gitea:
             self.logger.error(result["message"])
             raise Exception("Public Key not created... (gitea: %s)" % result["message"])
         return True #TODO: Return the py-Gitea Key object here 
+
+    def create_admin_token(self, user: User, password: str, name: str = "admin_token") -> str:
+        """Create an admin-level access token for a user.
+        
+        Args:
+            user (User): The user to create the token for
+            password (str): The user's password for authentication
+            name (str): Name for the token (default: "admin_token")
+            
+        Returns:
+            str: The created token string
+            
+        Raises:
+            Exception: If token creation fails
+        """
+        assert isinstance(user, User)
+        
+        admin_scopes = [
+            "write:admin",
+            "write:user",
+            "write:organization", 
+            "write:repository"
+        ]
+        
+        request_data = {
+            "name": name,
+            "scopes": admin_scopes
+        }
+        
+        # Create a temporary session with basic auth for token creation
+        temp_session = requests.Session()
+        temp_session.auth = (user.username, password)
+        temp_session.headers = self.headers.copy()
+        
+        try:
+            request = temp_session.post(
+                self.__get_url(Gitea.CREATE_TOKEN % user.username),
+                headers=temp_session.headers,
+                data=json.dumps(request_data)
+            )
+            
+            if request.status_code == 201:
+                result = self.parse_result(request)
+                if "sha1" in result:
+                    self.logger.info("Successfully created admin token '%s' for user '%s'" % (name, user.username))
+                    return result["sha1"]
+                else:
+                    self.logger.error("Token creation failed: %s" % result)
+                    raise Exception("Admin token not created for user %s" % user.username)
+            else:
+                self.logger.error("Token creation failed with status code: %s" % request.status_code)
+                self.logger.error("Response: %s" % request.text)
+                raise Exception("Admin token not created for user %s (status: %s)" % (user.username, request.status_code))
+                
+        except Exception as e:
+            self.logger.error("Error creating admin token for user '%s': %s" % (user.username, str(e)))
+            raise e 

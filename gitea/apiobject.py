@@ -195,6 +195,7 @@ class User(ApiObject):
     ADMIN_DELETE_USER = """/admin/users/%s"""  # <username>
     ADMIN_EDIT_USER = """/admin/users/{username}"""  # <username>
     USER_HEATMAP = """/users/%s/heatmap"""  # <username>
+    USER_TOKENS = """/users/%s/tokens"""  # <username>
 
     def __init__(self, gitea):
         super().__init__(gitea)
@@ -334,6 +335,42 @@ class User(ApiObject):
             for result in results
         ]
         return results
+
+    def create_token(self, password: str, name: str = "api_token", scopes: Optional[List[str]] = None) -> str:
+        """Create an access token for this user.
+        
+        Args:
+            password: The user's password for authentication
+            name: Name for the token (default: "api_token")
+            scopes: List of scopes for the token (default: read-only scopes)
+            
+        Returns:
+            The created token string
+            
+        Raises:
+            Exception: If token creation fails
+        """
+        if scopes is None:
+            scopes = [
+                "read:user",
+                "read:repository",
+                "read:organization"
+            ]
+        
+        url = User.USER_TOKENS % self.username
+        data = {"name": name, "scopes": scopes}
+        
+        try:
+            result = self.gitea.requests_post(url, data=data, auth=(self.username, password))
+            if "sha1" in result:
+                self.gitea.logger.info(f"Successfully created token '{name}' for user '{self.username}'")
+                return result["sha1"]
+            else:
+                self.gitea.logger.error(f"Token creation failed: {result}")
+                raise Exception(f"Token not created for user {self.username}")
+        except Exception as e:
+            self.gitea.logger.error(f"Error creating token for user '{self.username}': {e}")
+            raise e
 
 
 class Branch(ReadonlyApiObject):
