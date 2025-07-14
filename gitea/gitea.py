@@ -423,12 +423,10 @@ class Gitea:
             raise Exception("Public Key not created... (gitea: %s)" % result["message"])
         return True #TODO: Return the py-Gitea Key object here 
 
-    def create_admin_token(self, user: User, name: str = "admin_token") -> str:
-        """Create an admin-level access token for a user.
+    def create_admin_token(self, name: str = "admin_token", scopes: Optional[List[str]] = None]) -> str:
+        """Create an admin-level access token for the admin user.
         
         Args:
-            user (User): The user to create the token for
-            password (str): The user's password for authentication
             name (str): Name for the token (default: "admin_token")
             
         Returns:
@@ -437,19 +435,20 @@ class Gitea:
         Raises:
             Exception: If token creation fails
         """
-        assert isinstance(user, User)
-        
-        admin_scopes = [
-            "write:admin",
-            "write:user",
-            "write:organization", 
-            "write:repository"
-        ]
+        user = self.get_user()
+        if not scopes:
+            scopes = [
+                "write:admin",
+                "write:user",
+                "write:organization", 
+                "write:repository"
+            ]
+
         request = self.requests_post(
             Gitea.CREATE_TOKEN % user.username,
             data = {
-            "name": name,
-            "scopes": admin_scopes
+                "name": name,
+                "scopes": scopes
             }
         )
         
