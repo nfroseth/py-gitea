@@ -10,6 +10,7 @@ venv/
 ENV/
 # IDE settings
 .vscode/
+notebooks/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
