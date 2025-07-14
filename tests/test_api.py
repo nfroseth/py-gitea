@@ -1,4 +1,6 @@
 import base64
+import os
+from typing import Optional
 
 import pytest
 import uuid
@@ -16,11 +18,30 @@ from gitea import (
 from gitea import NotFoundException, AlreadyExistsException
 
 
+@pytest.fixture(scope="module")
+def admin_instance():
+    url = os.getenv("GITEA_ROOT_URL", "http://localhost:3000")
+    username = os.getenv("GITEA_ADMIN_USERNAME")
+    password = os.getenv("GITEA_ADMIN_PASSWORD")
+
+    if not username or not password:
+        pytest.fail("GITEA_ADMIN_USERNAME or GITEA_ADMIN_PASSWORD not set.")
+
+    return Gitea(url, auth=(username, password), verify=False)
+
+
+@pytest.fixture(scope="module")
+def token(admin_instance: Gitea):
+    return admin_instance.create_admin_token()
+
+
 # put a ".token" file into your directory containg only the token for gitea
-@pytest.fixture
-def instance(scope="module"):
+@pytest.fixture(scope="module")
+def instance(token):
+    if not token:
+        token = open(".token", "r").read().strip()
     try:
-        g = Gitea("http://localhost:3000", open(".token", "r").read().strip())
+        g = Gitea("http://localhost:3000", token)
         print("Gitea Version: " + g.get_version())
         print("API-Token belongs to user: " + g.get_user().username)
         return g
@@ -44,7 +65,6 @@ test_repo = "repo_" + uuid.uuid4().hex[:8]
 
 def test_token_owner(instance):
     user = instance.get_user()
-    assert user.username == "test", "Token user not 'tests'."
     assert user.is_admin, "Testuser is not Admin - Tests may fail"
 
 

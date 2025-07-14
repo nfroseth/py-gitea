@@ -423,7 +423,7 @@ class Gitea:
             raise Exception("Public Key not created... (gitea: %s)" % result["message"])
         return True #TODO: Return the py-Gitea Key object here 
 
-    def create_admin_token(self, name: str = "admin_token", scopes: Optional[List[str]] = None]) -> str:
+    def create_admin_token(self, name: str = "admin_token", scopes: Optional[List[str]] = None) -> str:
         """Create an admin-level access token for the admin user.
         
         Args:
@@ -458,3 +458,5 @@ class Gitea:
         else:
             self.logger.error("Token creation failed: %s" % request)
             raise Exception("Admin token not created for user %s" % user.username)
+    
+    #TODO: def delete_admin_token(self)
