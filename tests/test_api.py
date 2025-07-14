@@ -17,6 +17,8 @@ from gitea import (
 )
 from gitea import NotFoundException, AlreadyExistsException
 
+from dotenv import load_dotenv
+load_dotenv()
 
 @pytest.fixture(scope="module")
 def admin_instance():
