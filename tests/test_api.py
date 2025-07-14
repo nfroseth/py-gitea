@@ -34,10 +34,10 @@ def admin_instance():
 
 @pytest.fixture(scope="module")
 def token(admin_instance: Gitea):
-    yield admin_instance.create_admin_token()
+    yield admin_instance.create_admin_token(name="test_admin_token_0")
 
     try:
-        admin_instance.delete_admin_token()
+        admin_instance.delete_admin_token(name="test_admin_token_0")
     except Exception as e:
         pytest.fail(f"Failed to delete admin token with {e}")
 
