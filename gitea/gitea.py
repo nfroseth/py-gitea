@@ -1,6 +1,6 @@
 import logging
 import json
-from typing import List, Dict, Union
+from typing import List, Dict, Optional, Union
 from immutabledict import immutabledict
 import requests
 import urllib3
@@ -135,7 +135,7 @@ class Gitea:
             if page_limit and page > page_limit:
                 return aggregated_result
 
-    def requests_put(self, endpoint: str, data: dict = None):
+    def requests_put(self, endpoint: str, data: Optional[dict] = None):
         if not data:
             data = {}
         request = self.requests.put(
@@ -146,7 +146,7 @@ class Gitea:
             self.logger.error(message)
             raise Exception(message)
 
-    def requests_delete(self, endpoint: str, data: dict = None):
+    def requests_delete(self, endpoint: str, data: Optional[dict] = None):
         if not data:
             data = {}
         request = self.requests.delete(
@@ -211,7 +211,7 @@ class Gitea:
         results = self.requests_get(Gitea.GET_USERS_ADMIN)
         return [User.parse_response(self, result) for result in results]
 
-    def get_user_by_email(self, email: str) -> User:
+    def get_user_by_email(self, email: str) -> Optional[User]:
         users = self.get_users()
         for user in users:
             if user.email == email or email in user.emails:
@@ -230,12 +230,12 @@ class Gitea:
         user_name: str,
         email: str,
         password: str,
-        full_name: str = None,
-        login_name: str = None,
+        full_name: Optional[str] = None,
+        login_name: Optional[str] = None,
         change_pw=True,
         send_notify=True,
         source_id=0,
-    ):
+    ) -> User:
         """Create User.
         Throws:
             AlreadyExistsException, if the User exists already
@@ -279,10 +279,10 @@ class Gitea:
         description: str = "",
         private: bool = False,
         autoInit=True,
-        gitignores: str = None,
-        license: str = None,
+        gitignores: Optional[str] = None,
+        license: Optional[str] = None,
         readme: str = "Default",
-        issue_labels: str = None,
+        issue_labels: Optional[str] = None,
         default_branch="master",
     ):
         """Create a Repository as the administrator
