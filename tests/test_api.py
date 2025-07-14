@@ -32,7 +32,12 @@ def admin_instance():
 
 @pytest.fixture(scope="module")
 def token(admin_instance: Gitea):
-    return admin_instance.create_admin_token()
+    yield admin_instance.create_admin_token()
+
+    try:
+        admin_instance.delete_admin_token()
+    except Exception as e:
+        pytest.fail(f"Failed to delete admin token with {e}")
 
 
 # put a ".token" file into your directory containg only the token for gitea
@@ -481,6 +486,7 @@ def test_delete_user(instance):
         User.request(instance, user_name)
 
 
+@pytest.mark.external
 def test_migrate_repo_gitea(instance):
     repo = Repository.migrate_repo(
         instance,
@@ -498,6 +504,7 @@ def test_migrate_repo_gitea(instance):
     repo.delete()
 
 
+@pytest.mark.external
 def test_migrate_repo_github(instance):
     repo = Repository.migrate_repo(
         instance,

@@ -81,5 +81,9 @@ Tests can be run with:
 
 ```python3 -m pytest test_api.py```
 
+Run all tests that do not depend on reaching out externally
+
+```pytest -m "not external" tests/test_api.py -v```
+
 Make sure to have a gitea-instance running on `http://localhost:3000`, and an admin-user token at `.token`.
 The admin user must be named ``test``, with email ``secondarytest@test.org``.

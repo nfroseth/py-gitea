@@ -21,6 +21,7 @@ class Gitea:
     CREATE_TEAM = """/orgs/%s/teams"""  # <orgname>
     ADD_PUBLIC_KEY = """/admin/users/%s/keys"""
     CREATE_TOKEN = """/users/%s/tokens"""  # <username>
+    DELETE_TOKEN = """/users/%s/tokens/%s"""  # <username>, <token_name>
 
     def __init__(
         self,
@@ -459,4 +460,6 @@ class Gitea:
             self.logger.error("Token creation failed: %s" % request)
             raise Exception("Admin token not created for user %s" % user.username)
     
-    #TODO: def delete_admin_token(self)
+    def delete_admin_token(self, name: str = "admin_token"):
+        user = self.get_user()
+        self.requests_delete(Gitea.DELETE_TOKEN % (user.username, name))
