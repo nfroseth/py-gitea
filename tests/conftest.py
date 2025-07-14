@@ -3,7 +3,7 @@
 
 Instructions
 ------------
-put a ".token" file into your directory containg only the token for gitea
+put a ".token" file into your directory containing only the token for gitea
 
 """
 
