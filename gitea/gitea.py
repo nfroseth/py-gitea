@@ -167,6 +167,7 @@ class Gitea:
                 "already exists" in request.text
                 or "e-mail already in use" in request.text
                 or "has been used already" in request.text
+                or "Email address has been used" in request.text
             ):
                 self.logger.warning(request.text)
                 raise AlreadyExistsException()
@@ -442,7 +443,8 @@ class Gitea:
                 "write:admin",
                 "write:user",
                 "write:organization", 
-                "write:repository"
+                "write:repository",
+                "write:issue",
             ]
 
         request = self.requests_post(

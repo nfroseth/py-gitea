@@ -315,9 +315,23 @@ class User(ApiObject):
         results = self.gitea.requests_get("/user/repos", sudo=self)
         return [Repository.parse_response(self, result) for result in results]
 
+    def add_emails(self, emails: List[str]):
+        result = self.gitea.requests_post(User.USER_MAIL % self.login, 
+                                          data = {
+                                              "emails": emails
+                                          })
+        if isinstance(result, list) and len(result) > 0:
+            self.gitea.logger.info(
+                "Successfully added Email %s " % len(result)
+            )
+        else:
+            self.gitea.logger.error(result["message"])
+            raise Exception("Email not added... (gitea: %s)" % result["message"])
+        return result
+
     def __request_emails(self):
         result = self.gitea.requests_get(User.USER_MAIL % self.login)
-        # report if the adress changed by this
+        # report if the address changed by this
         for mail in result:
             self._emails.append(mail["email"])
             if mail["primary"]:

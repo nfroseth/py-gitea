@@ -68,31 +68,31 @@ test_team = (
 test_repo = "repo_" + uuid.uuid4().hex[:8]
 
 
-def test_token_owner(instance):
+def test_token_owner(instance: Gitea):
     user = instance.get_user()
     assert user.is_admin, "Testuser is not Admin - Tests may fail"
 
 
-def test_gitea_version(instance):
+def test_gitea_version(instance: Gitea):
     assert instance.get_version().startswith("1."), "No Version String returned"
 
 
-def test_fail_get_non_existent_user(instance):
+def test_fail_get_non_existent_user(instance: Gitea):
     with pytest.raises(NotFoundException) as e:
         User.request(instance, test_user)
 
 
-def test_fail_get_non_existent_org(instance):
+def test_fail_get_non_existent_org(instance: Gitea):
     with pytest.raises(NotFoundException) as e:
         Organization.request(instance, test_org)
 
 
-def test_fail_get_non_existent_repo(instance):
+def test_fail_get_non_existent_repo(instance: Gitea):
     with pytest.raises(NotFoundException) as e:
         Repository.request(instance, test_user, test_repo)
 
-
-def test_create_user(instance):
+# @pytest.fixture#(scope="module")
+def test_create_user(instance: Gitea):
     email = test_user + "@example.org"
     user = instance.create_user(test_user, email, "abcdefg1.23AB", send_notify=False)
     assert user.username == test_user
@@ -102,9 +102,13 @@ def test_create_user(instance):
     assert not user.is_admin
     assert type(user.id) is int
     assert user.is_admin is False
+   
+    # yield user 
+
+    # user.delete()
 
 
-def test_change_user(instance):
+def test_change_user(instance: Gitea):
     user = instance.get_user_by_name(test_user)
     location = "a house"
     user.location = location
@@ -117,7 +121,7 @@ def test_change_user(instance):
     assert user.location == location
 
 
-def test_create_org(instance):
+def test_create_org(instance: Gitea):
     user = instance.get_user()
     org = instance.create_org(user, test_org, "some-desc", "loc")
     assert org.get_members()[0] == user
@@ -128,13 +132,13 @@ def test_create_org(instance):
     assert not org.full_name
 
 
-def test_non_changable_field(instance):
+def test_non_changable_field(instance: Gitea):
     org = Organization.request(instance, test_org)
     with pytest.raises(AttributeError) as e:
         org.id = 55
 
 
-def test_create_repo_userowned(instance):
+def test_create_repo_userowned(instance: Gitea):
     org = User.request(instance, test_user)
     repo = instance.create_repo(org, test_repo, "user owned repo")
     assert repo.description == "user owned repo"
@@ -143,7 +147,7 @@ def test_create_repo_userowned(instance):
     assert not repo.private
 
 
-def test_edit_org_fields_and_commit(instance):
+def test_edit_org_fields_and_commit(instance: Gitea):
     org = Organization.request(instance, test_org)
     org.description = "some thing other man"
     org.location = "somewehre new"
@@ -158,7 +162,7 @@ def test_edit_org_fields_and_commit(instance):
     assert org2.website == "http:\\\\testurl.com"
 
 
-def test_create_repo_orgowned(instance):
+def test_create_repo_orgowned(instance: Gitea):
     org = Organization.request(instance, test_org)
     repo = instance.create_repo(org, test_repo, "descr")
     assert repo.description == "descr"
@@ -167,7 +171,7 @@ def test_create_repo_orgowned(instance):
     assert not repo.private
 
 
-def test_patch_repo(instance):
+def test_patch_repo(instance: Gitea):
     fields = {
         "allow_rebase": False,
         "description": "new description",
@@ -184,7 +188,7 @@ def test_patch_repo(instance):
         assert getattr(repo, field) == value
 
 
-def test_list_branches(instance):
+def test_list_branches(instance: Gitea):
     org = Organization.request(instance, test_org)
     repo = org.get_repository(test_repo)
     branches = repo.get_branches()
@@ -193,7 +197,7 @@ def test_list_branches(instance):
     assert len(master) > 0
 
 
-def test_list_files_and_content(instance):
+def test_list_files_and_content(instance: Gitea):
     org = Organization.request(instance, test_org)
     repo = org.get_repository(test_repo)
     content = repo.get_git_content()
@@ -206,7 +210,7 @@ def test_list_files_and_content(instance):
     assert "descr" in str(base64.b64decode(readme_content))
 
 
-def test_create_file(instance):
+def test_create_file(instance: Gitea):
     TESTFILE_CONENTE = "TestStringFileContent"
     TESTFILE_CONENTE_B64 = base64.b64encode(bytes(TESTFILE_CONENTE, "utf-8"))
     org = Organization.request(instance, test_org)
@@ -221,7 +225,7 @@ def test_create_file(instance):
     assert TESTFILE_CONENTE in str(base64.b64decode(readme_content))
 
 
-def test_change_file(instance):
+def test_change_file(instance: Gitea):
     TESTFILE_CONENTE = "TestStringFileContent with changed content now"
     TESTFILE_CONENTE_B64 = base64.b64encode(bytes(TESTFILE_CONENTE, "utf-8"))
     org = Organization.request(instance, test_org)
@@ -241,7 +245,7 @@ def test_change_file(instance):
     assert len(readme_content) > 0
     assert TESTFILE_CONENTE in str(base64.b64decode(readme_content))
 
-def test_delete_file(instance):
+def test_delete_file(instance: Gitea):
     TESTFILE_CONENTE = "TestStringFileContent2"
     TESTFILE_CONENTE_B64 = base64.b64encode(bytes(TESTFILE_CONENTE, "utf-8"))
     org = Organization.request(instance, test_org)
@@ -257,7 +261,7 @@ def test_delete_file(instance):
     readmes = [c for c in content if c.name == "testfile2.md"]
     assert len(readmes) == 0
 
-def test_create_branch(instance):
+def test_create_branch(instance: Gitea):
     org = Organization.request(instance, test_org)
     repo = org.get_repository(test_repo)
     branches = repo.get_branches()
@@ -266,7 +270,7 @@ def test_create_branch(instance):
     repo.add_branch(master[0], "test_branch")
 
 
-def test_create_team(instance):
+def test_create_team(instance: Gitea):
     org = Organization.request(instance, test_org)
     team = instance.create_team(org, test_team, "descr")
     assert team.name == test_team
@@ -274,7 +278,7 @@ def test_create_team(instance):
     assert team.organization == org
 
 
-def test_patch_team(instance):
+def test_patch_team(instance: Gitea):
     fields = {
         "can_create_org_repo": True,
         "description": "patched description",
@@ -292,14 +296,14 @@ def test_patch_team(instance):
         assert getattr(team, field) == value
 
 
-def test_request_team(instance):
+def test_request_team(instance: Gitea):
     org = Organization.request(instance, test_org)
     team = org.get_team(test_team)
     team2 = Team.request(instance, team.id)
     assert team.name == team2.name
 
 
-def test_create_milestone(instance):
+def test_create_milestone(instance: Gitea):
     org = Organization.request(instance, test_org)
     repo = org.get_repository(test_repo)
     ms = repo.create_milestone(
@@ -309,7 +313,7 @@ def test_create_milestone(instance):
     assert ms.title == "I love this Milestone"
 
 
-def test_user_teams(instance):
+def test_user_teams(instance: Gitea):
     org = Organization.request(instance, test_org)
     team = org.get_team(test_team)
     user = instance.get_user_by_name(test_user)
@@ -318,13 +322,13 @@ def test_user_teams(instance):
     assert team in teams
 
 
-def test_get_accessible_repositories(instance):
+def test_get_accessible_repositories(instance: Gitea):
     user = instance.get_user_by_name(test_user)
     repos = user.get_accessible_repos()
     assert len(repos) > 0
 
 
-def test_create_issue(instance):
+def test_create_issue(instance: Gitea):
     org = Organization.request(instance, test_org)
     repo = Repository.request(instance, org.username, test_repo)
     issue = Issue.create_issue(instance, repo, "TestIssue", "Body text with this issue")
@@ -333,7 +337,7 @@ def test_create_issue(instance):
     assert issue.body == "Body text with this issue"
 
 
-def test_hashing(instance):
+def test_hashing(instance: Gitea):
     # just call the hash function of each object to see if something bad happens
     org = Organization.request(instance, test_org)
     team = org.get_team(test_team)
@@ -347,7 +351,7 @@ def test_hashing(instance):
     assert len(set([org, team, user, repo, issue, branch, commit, milestone]))
 
 
-def test_change_issue(instance):
+def test_change_issue(instance: Gitea):
     org = Organization.request(instance, test_org)
     repo = org.get_repositories()[0]
     ms_title = "othermilestone"
@@ -381,14 +385,14 @@ def test_change_issue(instance):
     )
 
 
-def test_team_get_org(instance):
+def test_team_get_org(instance: Gitea):
     org = Organization.request(instance, test_org)
     user = instance.get_user_by_name(test_user)
     teams = user.get_teams()
     assert org.username == teams[0].organization.name
 
 
-def test_topic_functions(instance):
+def test_topic_functions(instance: Gitea):
     user = User.request(instance, test_user)
     repo = Repository.request(instance, user.username, test_repo)
     repo.add_topic("rings")
@@ -401,7 +405,7 @@ def test_topic_functions(instance):
     assert "rings" in repo.get_topics()
 
 
-def test_delete_repo_userowned(instance):
+def test_delete_repo_userowned(instance: Gitea):
     user = User.request(instance, test_user)
     repo = Repository.request(instance, user.username, test_repo)
     repo.delete()
@@ -409,14 +413,20 @@ def test_delete_repo_userowned(instance):
         Repository.request(instance, test_user, test_repo)
 
 
-def test_secundary_email(instance):
-    SECONDARYMAIL = "secondarytest@test.org"  # set up with real email
+def test_secondary_email(instance: Gitea):
+    user = instance.get_user_by_name(test_user)
+    with pytest.raises(AlreadyExistsException) as execinfo:
+        user.add_emails([user.email])
+
+    SECONDARYMAIL  = "secondary_" + test_user + "@example.org"
+    user.add_emails([SECONDARYMAIL])
+
     sec_user = instance.get_user_by_email(SECONDARYMAIL)
     assert SECONDARYMAIL in sec_user.emails
-    assert sec_user.username == "test"
+    assert sec_user.username == test_user
 
 
-def test_delete_repo_orgowned(instance):
+def test_delete_repo_orgowned(instance: Gitea):
     org = Organization.request(instance, test_org)
     repo = Repository.request(instance, org.username, test_repo)
     repo.delete()
@@ -424,7 +434,7 @@ def test_delete_repo_orgowned(instance):
         Repository.request(instance, test_user, test_repo)
 
 
-def test_change_repo_ownership_org(instance):
+def test_change_repo_ownership_org(instance: Gitea):
     old_org = Organization.request(instance, test_org)
     user = User.request(instance, test_user)
     new_org = instance.create_org(
@@ -438,7 +448,7 @@ def test_change_repo_ownership_org(instance):
     assert repo_name in [repo.name for repo in new_org.get_repositories()]
 
 
-def test_change_repo_ownership_user(instance):
+def test_change_repo_ownership_user(instance: Gitea):
     old_org = Organization.request(instance, test_org)
     user = User.request(instance, test_user)
     repo_name = test_repo + "_repomove"
@@ -452,7 +462,7 @@ def test_change_repo_ownership_user(instance):
         assert repo_name not in [repo.name for repo in user.get_repositories()]
 
 
-def test_delete_team(instance):
+def test_delete_team(instance: Gitea):
     org = Organization.request(instance, test_org)
     team = org.get_team(test_team)
     team.delete()
@@ -460,7 +470,7 @@ def test_delete_team(instance):
         team = org.get_team(test_team)
 
 
-def test_delete_teams(instance):
+def test_delete_teams(instance: Gitea):
     org = Organization.request(instance, test_org)
     repos = org.get_repositories()
     for repo in repos:
@@ -469,14 +479,14 @@ def test_delete_teams(instance):
     assert len(repos) == 0
 
 
-def test_delete_org(instance):
+def test_delete_org(instance: Gitea):
     org = Organization.request(instance, test_org)
     org.delete()
     with pytest.raises(NotFoundException) as e:
         Organization.request(instance, test_org)
 
 
-def test_delete_user(instance):
+def test_delete_user(instance: Gitea):
     user_name = test_user + "delte_test"
     email = user_name + "@example.org"
     user = instance.create_user(user_name, email, "abcdefg1.23AB", send_notify=False)
@@ -487,7 +497,7 @@ def test_delete_user(instance):
 
 
 @pytest.mark.external
-def test_migrate_repo_gitea(instance):
+def test_migrate_repo_gitea(instance: Gitea):
     repo = Repository.migrate_repo(
         instance,
         MigrationServices.GITEA,
@@ -505,7 +515,7 @@ def test_migrate_repo_gitea(instance):
 
 
 @pytest.mark.external
-def test_migrate_repo_github(instance):
+def test_migrate_repo_github(instance: Gitea):
     repo = Repository.migrate_repo(
         instance,
         MigrationServices.GITHUB,
