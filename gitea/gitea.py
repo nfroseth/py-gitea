@@ -407,7 +407,9 @@ class Gitea:
         )  # fixes strange behaviour of gitea not returning a valid organization here.
         return api_object
 
-    def add_public_key(self, owner: User, key: str, title: str, read_only: bool = False) -> bool:
+    def add_public_key(
+        self, owner: User, key: str, title: str, read_only: bool = False
+    ) -> bool:
         assert isinstance(owner, User)
         result = self.requests_post(
             Gitea.ADD_PUBLIC_KEY % owner.username,
@@ -431,7 +433,10 @@ class Gitea:
         return True  # TODO: Return the py-Gitea Key object here
 
     def create_admin_token(
-        self, name: str = "admin_token", scopes: Optional[List[str]] = None
+        self,
+        name: str = "admin_token",
+        scopes: Optional[List[str]] = None,
+        username: Optional[str] = None,
     ) -> str:
         """Create an admin-level access token for the admin user.
 
@@ -453,7 +458,9 @@ class Gitea:
         Raises:
             Exception: If token creation fails due to API errors or invalid parameters
         """
-        user = self.get_user()
+        if not username:
+            username = self.get_user().username
+
         if not scopes:
             scopes = [
                 "write:admin",
@@ -464,18 +471,17 @@ class Gitea:
             ]
 
         request = self.requests_post(
-            Gitea.CREATE_TOKEN % user.username, data={"name": name, "scopes": scopes}
+            Gitea.CREATE_TOKEN % username, data={"name": name, "scopes": scopes}
         )
 
         if "sha1" in request:
             self.logger.info(
-                "Successfully created admin token '%s' for user '%s'"
-                % (name, user.username)
+                "Successfully created admin token '%s' for user '%s'" % (name, username)
             )
             return request["sha1"]
         else:
             self.logger.error("Token creation failed: %s" % request)
-            raise Exception("Admin token not created for user %s" % user.username)
+            raise Exception("Admin token not created for user %s" % username)
 
     def delete_admin_token(self, name: str = "admin_token") -> None:
         """Delete an existing access token for the admin user.
