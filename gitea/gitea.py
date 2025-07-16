@@ -428,14 +428,23 @@ class Gitea:
     def create_admin_token(self, name: str = "admin_token", scopes: Optional[List[str]] = None) -> str:
         """Create an admin-level access token for the admin user.
         
+        This function creates a new access token for the authenticated admin user with
+        the specified name and scopes. If no scopes are provided, it defaults to a
+        comprehensive set of admin permissions.
+        
         Args:
-            name (str): Name for the token (default: "admin_token")
+            name (str): Name for the token (default: "admin_token"). Must be unique
+                       for the user.
+            scopes (Optional[List[str]]): List of permission scopes for the token.
+                                        If None, defaults to comprehensive admin permissions:
+                                        ['write:admin', 'write:user', 'write:organization',
+                                         'write:repository', 'write:issue']
             
         Returns:
-            str: The created token string
+            str: The SHA1 token string that can be used for API authentication
             
         Raises:
-            Exception: If token creation fails
+            Exception: If token creation fails due to API errors or invalid parameters
         """
         user = self.get_user()
         if not scopes:
@@ -462,6 +471,23 @@ class Gitea:
             self.logger.error("Token creation failed: %s" % request)
             raise Exception("Admin token not created for user %s" % user.username)
     
-    def delete_admin_token(self, name: str = "admin_token"):
+    def delete_admin_token(self, name: str = "admin_token") -> None:
+        """Delete an existing access token for the admin user.
+        
+        This function removes an existing access token with the specified name
+        for the authenticated admin user. The token will be immediately revoked
+        and can no longer be used for API authentication.
+        
+        Args:
+            name (str): Name of the token to delete (default: "admin_token").
+                       Must match an existing token name for the user.
+        
+        Returns:
+            None: This function does not return a value
+            
+        Raises:
+            NotFoundException: If the token with the specified name does not exist
+            Exception: If token deletion fails due to API errors
+        """
         user = self.get_user()
         self.requests_delete(Gitea.DELETE_TOKEN % (user.username, name))
