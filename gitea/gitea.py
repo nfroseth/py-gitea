@@ -26,13 +26,13 @@ class Gitea:
     def __init__(
         self,
         gitea_url: str,
-        token_text=None,
-        auth=None,
-        verify=True,
-        log_level="INFO",
+        token_text: Optional[str] = None,
+        auth: Optional[tuple] = None,
+        verify: bool = True,
+        log_level: str = "INFO",
         # example: "socks5h://127.0.0.1:9050"
-        proxy=None,
-    ):
+        proxy: Optional[str] = None,
+    ) -> None:
         """Initializing Gitea-instance
 
         Args:
@@ -71,7 +71,7 @@ class Gitea:
         if not verify:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    def __get_url(self, endpoint):
+    def __get_url(self, endpoint: str) -> str:
         url = self.url + "/api/v1" + endpoint
         self.logger.debug("Url: %s" % url)
         return url
@@ -117,11 +117,11 @@ class Gitea:
     def requests_get_paginated(
         self,
         endpoint: str,
-        params=immutabledict(),
-        sudo=None,
+        params: dict = immutabledict(),
+        sudo: Optional[User] = None,
         page_key: str = "page",
         page_limit: int = 0,
-    ):
+    ) -> List[Dict]:
         page = 1
         combined_params = {}
         combined_params.update(params)
@@ -136,7 +136,7 @@ class Gitea:
             if page_limit and page > page_limit:
                 return aggregated_result
 
-    def requests_put(self, endpoint: str, data: Optional[dict] = None):
+    def requests_put(self, endpoint: str, data: Optional[dict] = None) -> None:
         if not data:
             data = {}
         request = self.requests.put(
@@ -147,7 +147,7 @@ class Gitea:
             self.logger.error(message)
             raise Exception(message)
 
-    def requests_delete(self, endpoint: str, data: Optional[dict] = None):
+    def requests_delete(self, endpoint: str, data: Optional[dict] = None) -> None:
         if not data:
             data = {}
         request = self.requests.delete(
@@ -158,7 +158,7 @@ class Gitea:
             self.logger.error(message)
             raise Exception(message)
 
-    def requests_post(self, endpoint: str, data: dict):
+    def requests_post(self, endpoint: str, data: dict) -> Dict:
         request = self.requests.post(
             self.__get_url(endpoint), headers=self.headers, data=json.dumps(data)
         )
@@ -181,7 +181,7 @@ class Gitea:
             )
         return self.parse_result(request)
 
-    def requests_patch(self, endpoint: str, data: dict):
+    def requests_patch(self, endpoint: str, data: dict) -> Dict:
         request = self.requests.patch(
             self.__get_url(endpoint), headers=self.headers, data=json.dumps(data)
         )
@@ -193,11 +193,11 @@ class Gitea:
             raise Exception(error_message)
         return self.parse_result(request)
 
-    def get_orgs_public_members_all(self, orgname):
+    def get_orgs_public_members_all(self, orgname: str) -> Dict:
         path = "/orgs/" + orgname + "/public_members"
         return self.requests_get(path)
 
-    def get_orgs(self):
+    def get_orgs(self) -> List[Organization]:
         path = "/admin/orgs"
         results = self.requests_get(path)
         return [Organization.parse_response(self, result) for result in results]
@@ -281,13 +281,13 @@ class Gitea:
         repoName: str,
         description: str = "",
         private: bool = False,
-        autoInit=True,
+        autoInit: bool = True,
         gitignores: Optional[str] = None,
         license: Optional[str] = None,
         readme: str = "Default",
         issue_labels: Optional[str] = None,
-        default_branch="master",
-    ):
+        default_branch: str = "master",
+    ) -> Repository:
         """Create a Repository as the administrator
 
         Throws:
@@ -327,10 +327,10 @@ class Gitea:
         owner: User,
         orgName: str,
         description: str,
-        location="",
-        website="",
-        full_name="",
-    ):
+        location: str = "",
+        website: str = "",
+        full_name: str = "",
+    ) -> Organization:
         assert isinstance(owner, User)
         result = self.requests_post(
             Gitea.CREATE_ORG % owner.username,
@@ -364,7 +364,7 @@ class Gitea:
         permission: str = "read",
         can_create_org_repo: bool = False,
         includes_all_repositories: bool = False,
-        units=(
+        units: tuple = (
             "repo.code",
             "repo.issues",
             "repo.ext_issues",
@@ -374,7 +374,7 @@ class Gitea:
             "repo.ext_wiki",
         ),
         units_map: "RepoUnits" = RepoUnits(),
-    ):
+    ) -> Team:
         """Creates a Team.
 
         Args:
@@ -407,7 +407,7 @@ class Gitea:
         )  # fixes strange behaviour of gitea not returning a valid organization here.
         return api_object
 
-    def add_public_key(self, owner: User, key: str, title: str, read_only=False):
+    def add_public_key(self, owner: User, key: str, title: str, read_only: bool = False) -> bool:
         assert isinstance(owner, User)
         result = self.requests_post(
             Gitea.ADD_PUBLIC_KEY % owner.username,
