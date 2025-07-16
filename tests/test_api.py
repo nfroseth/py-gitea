@@ -295,7 +295,6 @@ def test_patch_team(instance: Gitea):
         setattr(team, field, value)
     team.commit()
     team = Team.request(instance, team.id)
-    print(team)
     for field, value in fields.items():
         assert getattr(team, field) == value
 
